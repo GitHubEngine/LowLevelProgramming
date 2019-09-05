@@ -12,8 +12,10 @@ EXTERN wsprintfA: PROC
 .DATA
 	STR1 DB "Введите число 1: ", 13, 10, 0
 	STR2 DB "Введите число 2: ", 13, 10, 0
+	ERRSTR DB "Ошибка! Неправильно введено число", 13, 10, 0
+	RESSTR DB "Результат: ", 0
 
-	STRNUM DB 4 dup (?)
+	NUMSTR DB 4 dup (?)
 	LEN DD ?
 	NUM DW ?
 	RES DW 0
@@ -36,6 +38,18 @@ EXTERN wsprintfA: PROC
 	PUSH EAX
 	CALL CharToOemA@8
 
+	; Перекодировка строки ошибки
+	MOV EAX, OFFSET ERRSTR
+	PUSH EAX
+	PUSH EAX
+	CALL CharToOemA@8
+
+	; Перекодировка строки результата
+	MOV EAX, OFFSET RESSTR
+	PUSH EAX
+	PUSH EAX
+	CALL CharToOemA@8
+
 	; Получение дескриптора ввода
 	PUSH -10
 	CALL GetStdHandle@4
@@ -49,6 +63,7 @@ EXTERN wsprintfA: PROC
 	; Система счисления - восьмеричная
 	MOV DI, 8
 
+	BEGIN:
 	; Обработка первого числа
 	PUSH OFFSET STR1
 	CALL lstrlenA@4
@@ -63,19 +78,23 @@ EXTERN wsprintfA: PROC
 	PUSH 0
 	PUSH OFFSET LEN
 	PUSH 8
-	PUSH OFFSET STRNUM
+	PUSH OFFSET NUMSTR
 	PUSH DIN
 	CALL ReadConsoleA@20
 
 	SUB LEN, 2
 	MOV ECX, LEN
-	MOV ESI, OFFSET STRNUM
+	MOV ESI, OFFSET NUMSTR
 	XOR BX, BX	
 	XOR AX, AX
 
 	CONVERT1: 
 		MOV BL, [ESI]
 		SUB BL, '0'
+		CMP BL, 0
+		JB ERROR
+		CMP BL, 7
+		JA ERROR
 		MUL DI
 		ADD AX, BX
 		INC ESI
@@ -97,20 +116,24 @@ EXTERN wsprintfA: PROC
 	PUSH 0
 	PUSH OFFSET LEN
 	PUSH 8
-	PUSH OFFSET STRNUM
+	PUSH OFFSET NUMSTR
 	PUSH DIN
 	CALL ReadConsoleA@20
 
 
 	SUB LEN, 2
 	MOV ECX, LEN
-	MOV ESI, OFFSET STRNUM
+	MOV ESI, OFFSET NUMSTR
 	XOR BX, BX	
 	XOR AX, AX
 
 	CONVERT2: 
 		MOV BL, [ESI]
 		SUB BL, '0'
+		CMP BL, 0
+		JB ERROR
+		CMP BL, 7
+		JA ERROR
 		MUL DI
 		ADD AX, BX
 		INC ESI
@@ -131,7 +154,7 @@ EXTERN wsprintfA: PROC
 		CMP AX, 0
 	JA CONVERT3
 
-	MOV ESI, OFFSET STRNUM
+	MOV ESI, OFFSET NUMSTR
 	MOV ECX, LEN
 
 	CONVERT4:
@@ -142,18 +165,46 @@ EXTERN wsprintfA: PROC
 	LOOP CONVERT4
 
 	; Вывод результата
-	MOV EAX, LEN
+	PUSH OFFSET RESSTR
+	CALL lstrlenA@4
 
 	PUSH 0
 	PUSH OFFSET LEN
 	PUSH EAX
-	PUSH OFFSET STRNUM
+	PUSH OFFSET RESSTR
+	PUSH DOUT
+	CALL WriteConsoleA@20
+
+	PUSH OFFSET NUMSTR
+	CALL lstrlenA@4
+
+	PUSH 0
+	PUSH OFFSET LEN
+	PUSH EAX
+	PUSH OFFSET NUMSTR
 	PUSH DOUT
 	CALL WriteConsoleA@20
 
 
 	MOV ECX, 03FFFFFFFH
 	L1: LOOP L1
+
+	PUSH 0
+	CALL ExitProcess@4
+
+	; Ошибка введения числа
+	ERROR:
+		PUSH OFFSET ERRSTR
+		CALL lstrlenA@4
+
+		PUSH 0
+		PUSH OFFSET LEN
+		PUSH EAX
+		PUSH OFFSET ERRSTR
+		PUSH DOUT
+		CALL WriteConsoleA@20
+
+		JMP BEGIN
 
 	MAIN ENDP
 	END MAIN
