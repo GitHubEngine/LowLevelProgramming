@@ -7,7 +7,6 @@ EXTERN CharToOemA@8: PROC
 EXTERN ReadConsoleA@20: PROC
 EXTERN ExitProcess@4: PROC
 EXTERN lstrlenA@4: PROC
-EXTERN wsprintfA: PROC
 
 .DATA
 	STR1 DB "Введите число 1: ", 13, 10, 0
@@ -15,7 +14,7 @@ EXTERN wsprintfA: PROC
 	ERRSTR DB "Ошибка! Неправильно введено число", 13, 10, 0
 	RESSTR DB "Результат: ", 0
 
-	NUMSTR DB 4 dup (?)
+	NUMSTR DB 6 dup (?)
 	LEN DD ?
 	NUM DW ?
 	RES DW 0
@@ -127,7 +126,7 @@ EXTERN wsprintfA: PROC
 	XOR BX, BX	
 	XOR AX, AX
 
-	CONVERT2: 
+	CONVERT2:
 		MOV BL, [ESI]
 		SUB BL, '0'
 		CMP BL, 0
