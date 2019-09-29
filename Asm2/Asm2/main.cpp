@@ -1,15 +1,15 @@
 #include <string.h>
 #include <stdio.h>
 
-extern "C" char* DELDOTS(char *, int);
+const int size = 8193;
+extern "C" char* DELDOTS(const char *);
 
 int main()
 {
-	char string[] = "a.b.c.klj.";
-
-	int length = strlen(string);
-	char* res = DELDOTS(string, length);
-
-	printf_s(res);
+	char string[size];
+	printf_s("Enter string (max. length: %d) > ", size - 1);
+	gets_s(string, size);
+	char* res = DELDOTS(string);
+	printf_s("Result > %s\n\n\n", res);
 	return 0;
 }
