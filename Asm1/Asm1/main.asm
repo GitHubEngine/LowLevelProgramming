@@ -1,6 +1,5 @@
-.386 
+.386
 .MODEL FLAT, STDCALL
-
 EXTERN GetStdHandle@4: PROC
 EXTERN WriteConsoleA@20: PROC
 EXTERN CharToOemA@8: PROC
@@ -9,24 +8,23 @@ EXTERN ExitProcess@4: PROC
 EXTERN lstrlenA@4: PROC
 
 .DATA
-    STR1 DB "Введите число 1: ", 13, 10, 0
-    STR2 DB "Введите число 2: ", 13, 10, 0
-    ERRSTR DB "Ошибка! Неправильно введено число", 13, 10, 0
-    RESSTR DB "Результат: ", 0
+STR1 DB "Введите число 1: ", 13, 10, 0
+STR2 DB "Введите число 2: ", 13, 10, 0
+ERRSTR DB "Ошибка! Неправильно введено число", 13, 10, 0
+RESSTR DB "Результат: ", 0
 
-    NUMSTR DB 10 dup (?)
-    LEN DD ?
-    NUM DW ?
-    RES DW 0
+NUMSTR DB 8 dup (?)
+NUM DW ?
+LEN DD ?
+RES DW 0
 
-    DIN DD ?
-    DOUT DD ?
+DIN DD ?
+DOUT DD ?
 
-	FLAG DB 0
+FLAG DB 0
 
 .CODE
-    MAIN PROC
-    
+	MAIN PROC
 		; Перекодировка первой строки
 		MOV EAX, OFFSET STR1
 		PUSH EAX
@@ -38,7 +36,7 @@ EXTERN lstrlenA@4: PROC
 		PUSH EAX
 		PUSH EAX
 		CALL CharToOemA@8
-
+	
 		; Перекодировка строки ошибки
 		MOV EAX, OFFSET ERRSTR
 		PUSH EAX
@@ -56,19 +54,19 @@ EXTERN lstrlenA@4: PROC
 		CALL GetStdHandle@4
 		MOV DIN, EAX
 
-		; Получение дискриптора вывода
+		; Получение дескриптора вывода
 		PUSH -11
 		CALL GetStdHandle@4
 		MOV DOUT, EAX
-    
+
 		; Система счисления - восьмеричная
-		XOR EDI, EDI
-		MOV EDI, 8
+		MOV DI, 8
 
 		; Обработка первого числа
 BEGIN:	PUSH OFFSET STR1
 		CALL lstrlenA@4
 
+		; Вывод приглашения для ввода
 		PUSH 0
 		PUSH OFFSET LEN
 		PUSH EAX
@@ -76,6 +74,7 @@ BEGIN:	PUSH OFFSET STR1
 		PUSH DOUT
 		CALL WriteConsoleA@20
 
+		; Чтение введенной строки
 		PUSH 0
 		PUSH OFFSET LEN
 		PUSH 8
@@ -83,39 +82,45 @@ BEGIN:	PUSH OFFSET STR1
 		PUSH DIN
 		CALL ReadConsoleA@20
 
+		; Подготовка к обработке строки
 		SUB LEN, 2
-		MOV ECX, LEN
 		MOV ESI, OFFSET NUMSTR
-		XOR BX, BX    
+		XOR BX, BX
 		XOR AX, AX
 
-CON1:		MOV BL, [ESI]
+		; Проверка минуса
+		MOV BL, [ESI]
+		CMP BL, '-'
+		JNE F1
+		MOV FLAG, 1
+		SUB LEN, 1
+		INC ESI
 
-			CMP BL, '-'
-			JNE M
-			MOV FLAG, 1
-			JMP M1
+F1:		MOV ECX, LEN
+		; Перевод числа в строку
+CONV1:	MOV BL, [ESI]
+		SUB BL, '0'
+		CMP BL, 0
+		JB ERROR
+		CMP BL, 7
+		JA ERROR
+		MUL DI
+		ADD AX, BX
+		INC ESI
+		LOOP CONV1
 
-M:			SUB BL, '0'
-			CMP BL, 0
-			JB ERROR
-			CMP BL, 7
-			JA ERROR
-			MUL DI
-			ADD AX, BX
-M1:			INC ESI
-		LOOP CON1
-
+		; Добавление минуса после получения числа
 		CMP FLAG, 1
-		JNE F
+		JNE F2
 		NEG AX
-F:		ADD RES, AX
+F2:		ADD RES, AX
 		MOV FLAG, 0
 
 		; Обработка второго числа
 		PUSH OFFSET STR2
 		CALL lstrlenA@4
 
+		; Вывод приглашения для ввода
 		PUSH 0
 		PUSH OFFSET LEN
 		PUSH EAX
@@ -123,6 +128,7 @@ F:		ADD RES, AX
 		PUSH DOUT
 		CALL WriteConsoleA@20
 
+		; Чтение введенной строки
 		PUSH 0
 		PUSH OFFSET LEN
 		PUSH 8
@@ -130,67 +136,73 @@ F:		ADD RES, AX
 		PUSH DIN
 		CALL ReadConsoleA@20
 
-
+		; Подготовка к обработке строки
 		SUB LEN, 2
-		MOV ECX, LEN
 		MOV ESI, OFFSET NUMSTR
-		XOR BX, BX    
+		XOR BX, BX
 		XOR AX, AX
 
-CON2:		MOV BL, [ESI]
+		; Проверка минуса
+		MOV BL, [ESI]
+		CMP BL, '-'
+		JNE F3
+		MOV FLAG, 1
+		INC ESI
+		SUB LEN, 1
 
-			CMP BL, '-'
-			JNE M2
-			MOV FLAG, 1
-			JMP M3
+F3:		MOV ECX, LEN
+		; Перевод числа в строку
+CONV2:	MOV BL, [ESI]
+		SUB BL, '0'
+		CMP BL, 0
+		JB ERROR
+		CMP BL, 7
+		JA ERROR
+		MUL DI
+		ADD AX, BX
+		INC ESI
+		LOOP CONV2
 
-M2:			SUB BL, '0'
-			CMP BL, 0
-			JB ERROR
-			CMP BL, 7
-			JA ERROR
-			MUL DI
-			ADD AX, BX
-M3:			INC ESI
-		LOOP CON2
-
+		; Добавление минуса после получения числа
 		CMP FLAG, 1
-		JNE F2
+		JNE F4
 		NEG AX
-F2:		ADD RES, AX
+F4:		ADD RES, AX
 		MOV FLAG, 0
 
 		; Перевод результата в строку
 		MOV AX, RES
 		MOV DI, 10
 		MOV LEN, 0
-	
-		JNS CON3
+
+		; Учитывание минуса при выводе строки
+		JNS CONV3
 		NEG AX
 		MOV FLAG, 1
 
+		; Добавление цифр числа в стек
+CONV3:	DIV DI
+		PUSH DX
+		XOR DX, DX
+		ADD LEN, 1
+		CMP AX, 0
+		JA CONV3
 
-CON3:		DIV DI
-			PUSH DX
-			XOR DX, DX
-			ADD LEN, 1
-			CMP AX, 0
-		JA CON3
-
+		; Подготовка для вывода строки
 		MOV ESI, OFFSET NUMSTR
 		MOV ECX, LEN
-
 		CMP FLAG, 1
-		JNE CON4
-		MOV BL, '-'
-		MOV [ESI], BL
+		JNE CONV4
+		MOV BX, '-'
+		MOV [ESI], BX
 		INC ESI
 
-CON4:		POP BX
-			ADD BX, '0'
-			MOV [ESI], BX
-			INC ESI
-		LOOP CON4
+		; Вывод строки
+CONV4:	POP BX
+		ADD BX, '0'
+		MOV [ESI], BX
+		INC ESI
+		LOOP CONV4
 
 		; Вывод результата
 		PUSH OFFSET RESSTR
@@ -213,7 +225,6 @@ CON4:		POP BX
 		PUSH DOUT
 		CALL WriteConsoleA@20
 
-
 		MOV ECX, 03FFFFFFFH
 		L1: LOOP L1
 
@@ -222,17 +233,16 @@ CON4:		POP BX
 
 		; Ошибка введения числа
 		ERROR:
-			PUSH OFFSET ERRSTR
-			CALL lstrlenA@4
+		PUSH OFFSET ERRSTR
+		CALL lstrlenA@4
 
-			PUSH 0
-			PUSH OFFSET LEN
-			PUSH EAX
-			PUSH OFFSET ERRSTR
-			PUSH DOUT
-			CALL WriteConsoleA@20
-
-			JMP BEGIN
-
-		MAIN ENDP
-		END MAIN
+		PUSH 0
+		PUSH OFFSET LEN
+		PUSH EAX
+		PUSH OFFSET ERRSTR
+		PUSH DOUT
+		CALL WriteConsoleA@20
+		JMP BEGIN
+	
+	MAIN ENDP
+	END MAIN
