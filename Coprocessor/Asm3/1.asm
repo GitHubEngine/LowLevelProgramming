@@ -1,8 +1,8 @@
 .386
 .MODEL FLAT, C
 .DATA
-	A DD 0.0
-	B DD 1.5707963
+	A DD 1000.0
+	B DD 0.7
 
 .CODE
 	func PROC
@@ -14,6 +14,11 @@
 		MOV [EBP - 4], EAX
 		MOV EAX, 3
 		MOV [EBP - 8], EAX
+
+		FLD B
+		FLD A
+		
+		FPREM
 
 		FINIT
 		;								ST(0)			ST(1)
