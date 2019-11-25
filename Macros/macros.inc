@@ -20,10 +20,10 @@ PrintString macro dout, string, lens
 	call WriteConsoleA@20
 endm
 
-ReadSymbol macro din, symbol, lens
+ReadSymbol macro din, buffer, symbol, lens
 	push 0
 	push offset lens
-	push 1
+	push lens
 	push offset buffer
 	push din
 	call ReadConsoleA@20
@@ -33,7 +33,7 @@ ReadSymbol macro din, symbol, lens
 	mov symbol, bl
 endm
 
-ReadString macro din, string, lens
+ReadString macro din, buffer, lens
 	push 0
 	push offset lens
 	push lens

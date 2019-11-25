@@ -331,3 +331,8 @@ ASALocalRun/
 .mfractor/
 *.sln
 *.filters
+*.vcxproj
+*.sln
+*.vcxproj
+*.vcxproj
+*.sln
